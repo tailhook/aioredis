@@ -1,0 +1,40 @@
+containers:
+  redis:
+    builder: alpine
+    parameters:
+      packages: redis
+
+  python:
+    builder: ubuntu
+    parameters:
+      packages: python3-pip redis-tools
+      repos: universe
+    provision: |
+      pip3 install hiredis pyflakes pep8 coverage -e .
+
+commands:
+  test:
+    supervise:
+      redis:
+        container: redis
+        command:
+        - redis-server
+        - --daemonize
+        - no
+        - --unixsocket
+        - /work/run/aioredis.sock
+        - --port
+        - 6379
+        - --save
+        - ""  # nosave
+      python:
+        container: python
+        environ:
+          REDIS_SOCKET: /work/run/aioredis.sock
+          REDIS_VERSION: redis_version:2.8.17
+        run: |
+          set -ex
+          while ! redis-cli -s /work/run/aioredis.sock PING; do sleep 0.1; done
+          python3 runtests.py --coverage -v
+          pyflakes aioredis tests
+          pep8 aioredis tests
