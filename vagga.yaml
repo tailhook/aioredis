@@ -12,6 +12,14 @@ containers:
     provision: |
       pip3 install hiredis pyflakes pep8 coverage -e .
 
+  sphinx:
+    builder: ubuntu
+    parameters:
+      packages: python3-sphinx python3-pip make
+      repos: universe
+    provision: |
+      pip3 install hiredis -e .
+
 commands:
   test:
     supervise:
@@ -38,3 +46,18 @@ commands:
           python3 runtests.py --coverage -v
           pyflakes aioredis tests
           pep8 aioredis tests
+
+  html-docs:
+    description: Build HTML version of aioredis documentation
+    container: sphinx
+    work-dir: docs
+    command: make html
+    epilog: |
+      -------------------------------------------------
+      Done. Now docs are in docs/_build/html/index.html
+
+  build-docs:
+    description: Generic documentation builder command
+    container: sphinx
+    work-dir: docs
+    command: make
